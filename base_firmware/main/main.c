@@ -19,7 +19,7 @@ void run_wasm_app() {
     ESP_LOGI(TAG, "Searching for WASM partition");
 
     //finding a partition named wasm_bin
-    const esp_partition_t *wasm_partitesp_partition_find_first_first(
+    const esp_partition_t *wasm_partition = esp_partition_find_first(
         ESP_PARTITION_TYPE_DATA, 0x40, WASM_PARTITION_NAME
     );
 
@@ -30,7 +30,7 @@ void run_wasm_app() {
         return;
     }
 
-    ESP_LOGI(TAG, "Found WASM partition at offset" PRIx32 ", size: %" PRIu32 " bytes",
+    ESP_LOGI(TAG, "Found WASM partition at offset %" PRIx32 ", size: %" PRIu32 " bytes",
              wasm_partition->address, wasm_partition->size);
 
     //buffer size for reading the wasm file
@@ -91,7 +91,7 @@ void run_wasm_app() {
     }
 
     ESP_LOGI(TAG, "Creating WASM execution environment");
-    was _exec_env_t exec_env = wasm_runtime_create_exec_env(module_inst, WASM_STACK_SIZE);
+    wasm_exec_env_t exec_env = wasm_runtime_create_exec_env(module_inst, WASM_STACK_SIZE);
     if (!exec_env) {
         ESP_LOGE(TAG, "Failed to create WASM execution environment");
 
