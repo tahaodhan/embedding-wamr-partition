@@ -1,0 +1,8 @@
+# Name,     Type,  SubType, Offset,    Size,   Flags
+nvs,        data,  nvs,     0x9000,    24K,  
+otadata,    data,  ota,     0xF000,    8K,  
+factory,    app,   factory, 0x20000,   2M,  
+ota_0,      app,   ota_0,   0x220000,  2M,  
+ota_1,      app,   ota_1,   0x420000,  2M,  
+storage,    data,  spiffs,  0x620000,  512K,
+wasm_bin,   data,  0x40,    0x6A0000,  512K,
