@@ -1,4 +1,6 @@
-//flashing the wasm file into the location 
+//wasm file making and flashing
+
+emcc test.c -o my_program.wasm --no-entry -s STANDALONE_WASM
 esptool.py --chip esp32c6 -p /dev/ttyUSB0 write_flash 0x6A0000 my_program.wasm
 
 //reading the flash
