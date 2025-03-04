@@ -118,18 +118,19 @@ void run_wasm_app() {
 
 
     //looks for add function
-    wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, "add", NULL);
+    wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, "add");
     if (!func) {
         ESP_LOGE(TAG, "Function 'add' not found");
     } else {
-        // calls the add function
-        int32_t result;
-        if (!wasm_runtime_call_wasm(exec_env, func, 0, NULL)) {
+        uint32_t argv[1]; 
+        if (!wasm_runtime_call_wasm(exec_env, func, 0, argv)) {
             ESP_LOGE(TAG, "WASM function execution failed: %s", wasm_runtime_get_exception(module_inst));
         } else {
-            result = *(int32_t *)wasm_runtime_get_return_value(exec_env);
-            ESP_LOGI(TAG, "Result of add: %d", result);
+            int32_t result = (int32_t)argv[0]; // Retrieve the return value
+            ESP_LOGI(TAG, "Result of add: %" PRId32, result);
         }
+}
+
 
     //searching for main function if not tries to call add 
     // ESP_LOGI(TAG, "Searching for WASM function...");
