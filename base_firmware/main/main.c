@@ -117,30 +117,44 @@ void run_wasm_app() {
     }
 
 
-    //searching for main function if not tries to call add 
-    ESP_LOGI(TAG, "Searching for WASM function...");
-    const char *wasm_function_name = "main";
-    wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, wasm_function_name);
+    //looks for add function
+    wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, "add", NULL);
     if (!func) {
-        ESP_LOGW(TAG, "function 'main' not found trying 'add' instead.");
-        wasm_function_name = "add";
-        func = wasm_runtime_lookup_function(module_inst, wasm_function_name);
-    }
-
-    if (!func) {
-        ESP_LOGE(TAG, "no valid WASM function found to execute");
+        ESP_LOGE(TAG, "Function 'add' not found");
     } else {
-        uint32_t args[2] = {5, 7};
-        uint32_t results[1];  
-
-        if (!wasm_runtime_call_wasm(exec_env, func, 2, args)) {
-            ESP_LOGE(TAG, "WASM function execution failed Exception: %s", wasm_runtime_get_exception(module_inst));
+        // calls the add function
+        int32_t result;
+        if (!wasm_runtime_call_wasm(exec_env, func, 0, NULL)) {
+            ESP_LOGE(TAG, "WASM function execution failed: %s", wasm_runtime_get_exception(module_inst));
         } else {
-            results[0] = args[0];  
-            ESP_LOGI(TAG, "WASM function executed successfully Result: %" PRIu32 "", results[0]);
+            result = *(int32_t *)wasm_runtime_get_return_value(exec_env);
+            ESP_LOGI(TAG, "Result of add: %d", result);
         }
 
-        }
+    //searching for main function if not tries to call add 
+    // ESP_LOGI(TAG, "Searching for WASM function...");
+    // const char *wasm_function_name = "main";
+    // wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, wasm_function_name);
+    // if (!func) {
+    //     ESP_LOGW(TAG, "function 'main' not found trying 'add' instead.");
+    //     wasm_function_name = "add";
+    //     func = wasm_runtime_lookup_function(module_inst, wasm_function_name);
+    // }
+
+    // if (!func) {
+    //     ESP_LOGE(TAG, "no valid WASM function found to execute");
+    // } else {
+    //     uint32_t args[2] = {5, 7};
+    //     uint32_t results[1];  
+
+    //     if (!wasm_runtime_call_wasm(exec_env, func, 2, args)) {
+    //         ESP_LOGE(TAG, "WASM function execution failed Exception: %s", wasm_runtime_get_exception(module_inst));
+    //     } else {
+    //         results[0] = args[0];  
+    //         ESP_LOGI(TAG, "WASM function executed successfully Result: %" PRIu32 "", results[0]);
+    //     }
+
+    //     }
 
 
     //searches for main function in wasm file
