@@ -1,5 +1,4 @@
-#include <stdio.h>
-int main() {
-    printf("Hello from WASM!\n");
+int add(int a, int b)
+{
+	return a + b;
 }
-
