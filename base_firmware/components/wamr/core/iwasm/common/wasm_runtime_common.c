@@ -1518,7 +1518,7 @@ wasm_runtime_resolve_symbols(WASMModuleCommon *module)
 }
 
 WASMModuleCommon *
-wasm_runtime_load(uint8 *buf, uint32 size, char *error_buf,
+wasm_runtime_load(uint8 *buf, uint32 size,  char *error_buf,
                   uint32 error_buf_size)
 {
     LoadArgs args = { 0 };
