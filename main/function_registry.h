@@ -5,4 +5,4 @@
 
 void register_functions();
 
-#endif // FUNCTION_REGISTRY_H
+#endif 

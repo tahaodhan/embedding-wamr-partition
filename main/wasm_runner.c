@@ -24,61 +24,62 @@ static void *app_instance_main(wasm_module_inst_t module_inst) {
 }
 
 uint8_t *load_wasm_from_flash(size_t *wasm_file_buf_size) {
-    ESP_LOGI(LOG_TAG, "Searching for WASM partition...");
+    ESP_LOGI(LOG_TAG, "searching for WASM partition");
 
     const esp_partition_t *wasm_partition = esp_partition_find_first(
         ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, WASM_PARTITION_NAME);
 
     if (!wasm_partition) {
-        ESP_LOGE(LOG_TAG, "Failed to find WASM partition!");
+        ESP_LOGE(LOG_TAG, "failed to find WASM partition");
         return NULL;
     }
 
-    ESP_LOGI(LOG_TAG, "Found WASM partition at offset 0x%" PRIx32 ", size: %" PRIu32 " bytes",
+    ESP_LOGI(LOG_TAG, "found WASM partition at offset 0x%" PRIx32 ", size: %" PRIu32 " bytes",
              wasm_partition->address, wasm_partition->size);
 
-    *wasm_file_buf_size = (wasm_partition->size > MAX_WASM_FILE_SIZE)
-                              ? MAX_WASM_FILE_SIZE
-                              : wasm_partition->size;
-
-    ESP_LOGI(LOG_TAG, "Using WASM file size: %zu bytes", *wasm_file_buf_size);
-
-    uint8_t *wasm_data = (uint8_t *)heap_caps_malloc(*wasm_file_buf_size, MALLOC_CAP_8BIT);
+    // allocate buffer for max possible size
+    uint8_t *wasm_data = (uint8_t *)heap_caps_malloc(MAX_WASM_FILE_SIZE, MALLOC_CAP_8BIT);
     if (!wasm_data) {
-        ESP_LOGE(LOG_TAG, "Memory allocation failed! Available heap: %" PRIu32 " bytes",
+        ESP_LOGE(LOG_TAG, "memory allocation failed available heap: %" PRIu32 " bytes",
                  esp_get_free_heap_size());
         return NULL;
     }
 
-    ESP_LOGI(LOG_TAG, "Reading WASM file from flash...");
+    ESP_LOGI(LOG_TAG, "reading WASM file from flash");
 
-    size_t actual_wasm_size = 269;
-    esp_err_t err = esp_partition_read(wasm_partition, 0, wasm_data, actual_wasm_size);
-    *wasm_file_buf_size = actual_wasm_size;  
+    // read max possible size first
+    esp_err_t err = esp_partition_read(wasm_partition, 0, wasm_data, MAX_WASM_FILE_SIZE);
     if (err != ESP_OK) {
-        ESP_LOGE(LOG_TAG, "Failed to read WASM file! Error: %s", esp_err_to_name(err));
+        ESP_LOGE(LOG_TAG, "Failed to read WASM file error: %s", esp_err_to_name(err));
         free(wasm_data);
         return NULL;
     }
 
-    ESP_LOGI(LOG_TAG, "Dumping first 32 bytes of WASM file:");
-    for (size_t i = 0; i < 32; i++) {
-        printf("%02X ", wasm_data[i]);
-        if ((i + 1) % 8 == 0) printf("\n");
+    // find actual WASM file size by looking for its valid end
+    size_t actual_size = 0;
+    for (size_t i = MAX_WASM_FILE_SIZE - 1; i > 0; i--) {
+        if (wasm_data[i] != 0xFF){  // look for non-zero byte (valid data)
+            actual_size = i + 1;
+            break;
+        }
     }
-    printf("\n");
+
+    *wasm_file_buf_size = actual_size;  // set detected size
+    ESP_LOGI(LOG_TAG, "detected WASM file size %zu bytes", *wasm_file_buf_size);
 
     // Validate WASM magic header
     if (!(wasm_data[0] == 0x00 && wasm_data[1] == 0x61 &&
           wasm_data[2] == 0x73 && wasm_data[3] == 0x6D)) {
-        ESP_LOGE(LOG_TAG, "Invalid WASM header! File is corrupted.");
+        ESP_LOGE(LOG_TAG, "invalid WASM header");
         free(wasm_data);
         return NULL;
     }
 
-    ESP_LOGI(LOG_TAG, "WASM file loaded successfully.");
+    ESP_LOGI(LOG_TAG, "WASM file looaded successfully");
     return wasm_data;
 }
+
+
 
 void *iwasm_main(void *arg) {
     (void)arg;
@@ -87,7 +88,7 @@ void *iwasm_main(void *arg) {
     uint8_t *wasm_file_buf = load_wasm_from_flash(&wasm_file_buf_size);
 
     if (!wasm_file_buf || wasm_file_buf_size == 0) {
-        ESP_LOGE(LOG_TAG, "No valid WASM file found!");
+        ESP_LOGE(LOG_TAG, "no valid WASM file foun");
         return NULL;
     }
 
@@ -103,29 +104,29 @@ void *iwasm_main(void *arg) {
     init_args.mem_alloc_option.allocator.realloc_func = (void *)os_realloc;
     init_args.mem_alloc_option.allocator.free_func = (void *)os_free;
 
-    ESP_LOGI(LOG_TAG, "Initializing WASM runtime...");
+    ESP_LOGI(LOG_TAG, "initializing WASM runtime");
     if (!wasm_runtime_full_init(&init_args)) {
-        ESP_LOGE(LOG_TAG, "Failed to initialize WASM runtime!");
+        ESP_LOGE(LOG_TAG, "failed to initialize WASM runtime");
         free(wasm_file_buf);
         return NULL;
     }
 
-    ESP_LOGI(LOG_TAG, "Registering native functions...");
-    register_functions();
+    ESP_LOGI(LOG_TAG, "registering native functions");
+    register_functions(); // from the function_registry.c
 
 
-    ESP_LOGI(LOG_TAG, "Last 10 bytes of WASM file:");
+    ESP_LOGI(LOG_TAG, "last 10 bytes of WASM file");
     for (size_t i = wasm_file_buf_size - 10; i < wasm_file_buf_size; i++) {  
         printf("%02X ", wasm_file_buf[i]);  
     }
     printf("\n");
 
-    ESP_LOGI(LOG_TAG, "Loading WASM module...");
+    ESP_LOGI(LOG_TAG, "loading WASM module");
     wasm_module = wasm_runtime_load(wasm_file_buf, wasm_file_buf_size, error_buf, sizeof(error_buf));
     if (!wasm_module) {
         ESP_LOGE(LOG_TAG, "Error in wasm_runtime_load: %s", error_buf);
 
-        ESP_LOGI(LOG_TAG, "Dumping first 64 bytes of WASM file:");
+        ESP_LOGI(LOG_TAG, "printing first 64 bytes of WASM file");
         for (size_t i = 0; i < 32; i++) {
         }
         printf("\n");
@@ -133,31 +134,29 @@ void *iwasm_main(void *arg) {
         goto cleanup;
     }
 
-    ESP_LOGI(LOG_TAG, "Free heap before instantiation: %" PRIu32 " bytes", esp_get_free_heap_size());
-
-    ESP_LOGI(LOG_TAG, "Disabling extra heap allocation for testing...");
 
 
-    ESP_LOGI(LOG_TAG, "Instantiating WASM runtime...");
+
+    ESP_LOGI(LOG_TAG, "instantiating WASM runtime...");
     if (!(wasm_module_inst = wasm_runtime_instantiate(wasm_module, 64 * 1024, 128 * 1024, error_buf, sizeof(error_buf)))) {
         ESP_LOGE(LOG_TAG, "Error while instantiating: %s", error_buf);
         goto cleanup;
     }
 
-    ESP_LOGI(LOG_TAG, "Executing WASM main()...");
+    ESP_LOGI(LOG_TAG, "executing WASM main()");
     ret = app_instance_main(wasm_module_inst);
     assert(!ret);
 
-    ESP_LOGI(LOG_TAG, "Deinstantiating WASM runtime...");
+    ESP_LOGI(LOG_TAG, "deinstantiating WASM runtime");
     wasm_runtime_deinstantiate(wasm_module_inst);
 
 cleanup:
     if (wasm_module) {
-        ESP_LOGI(LOG_TAG, "Unloading WASM module...");
+        ESP_LOGI(LOG_TAG, "unloading WASM module");
         wasm_runtime_unload(wasm_module);
     }
 
-    ESP_LOGI(LOG_TAG, "Destroying WASM runtime...");
+    ESP_LOGI(LOG_TAG, "destroying WASM runtime");
     wasm_runtime_destroy();
 
     free(wasm_file_buf);
@@ -179,5 +178,5 @@ void run_wasm_app() {
     res = pthread_join(t, NULL);
     assert(res == 0);
 
-    ESP_LOGI(LOG_TAG, "WASM execution finished.");
+    ESP_LOGI(LOG_TAG, "WASM execution finished");
 }

@@ -16,11 +16,11 @@ static void wasm_sleep_ms(wasm_exec_env_t exec_env, int32_t milliseconds) {
 }
 
 static void wasm_print_debug(wasm_exec_env_t exec_env, const char *message) {
-    ESP_LOGI(LOG_TAG, "WASM Debug: %s", message);
+    ESP_LOGI(LOG_TAG, "WASM debug: %s", message);
 }
 
 void register_functions() {
-    ESP_LOGI(LOG_TAG, "Registering native functions");
+    ESP_LOGI(LOG_TAG, "registering native functions");
 
     static NativeSymbol native_symbols[] = {
         {"gpio_set_level", (void*)wasm_gpio_set_level, "(ii)", NULL},
