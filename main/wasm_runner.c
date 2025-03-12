@@ -7,14 +7,12 @@
 #include "esp_partition.h"
 #include "esp_err.h"
 #include "esp_heap_caps.h"
+#include "function_registry.h"
 
 #define WASM_PARTITION_NAME "wasm_bin"
 #define MAX_WASM_FILE_SIZE (64 * 1024)  
 #define LOG_TAG "wamr"
 
-static void wasm_print_debug(wasm_exec_env_t exec_env, const char *message) {
-    ESP_LOGI(LOG_TAG, "WASM Debug: %s", message);
-}
 
 static void *app_instance_main(wasm_module_inst_t module_inst) {
     const char *exception;
@@ -54,7 +52,7 @@ uint8_t *load_wasm_from_flash(size_t *wasm_file_buf_size) {
 
     ESP_LOGI(LOG_TAG, "Reading WASM file from flash...");
 
-    size_t actual_wasm_size = 211;
+    size_t actual_wasm_size = 269;
     esp_err_t err = esp_partition_read(wasm_partition, 0, wasm_data, actual_wasm_size);
     *wasm_file_buf_size = actual_wasm_size;  
     if (err != ESP_OK) {
@@ -113,9 +111,8 @@ void *iwasm_main(void *arg) {
     }
 
     ESP_LOGI(LOG_TAG, "Registering native functions...");
-    NativeSymbol native_symbols[] = {
-        {"print_debug", (void *)wasm_print_debug, "($)", NULL}};
-    wasm_runtime_register_natives("env", native_symbols, sizeof(native_symbols) / sizeof(NativeSymbol));
+    register_functions();
+
 
     ESP_LOGI(LOG_TAG, "Last 10 bytes of WASM file:");
     for (size_t i = wasm_file_buf_size - 10; i < wasm_file_buf_size; i++) {  

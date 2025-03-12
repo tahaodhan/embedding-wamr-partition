@@ -19,7 +19,6 @@ fi
 
 echo "Cleaning up old build files..."
 rm -f $WASM_FILE
-rm -f 
 
 echo "Compiling $C_FILE to WebAssembly..."
 $WASI_SDK_PATH/bin/clang -O3 \
@@ -70,5 +69,7 @@ else
     echo "Flash verification failed!"
     exit 1
 fi
+
+rm -f $BINARY_FILE
 
 echo "Build and flashing completed successfully!"
