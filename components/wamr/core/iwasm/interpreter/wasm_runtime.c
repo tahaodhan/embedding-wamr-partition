@@ -438,6 +438,11 @@ memory_instantiate(WASMModuleInstance *module_inst, WASMModuleInstance *parent,
                                     init_page_count, max_page_count,
                                     &memory_data_size)
         != BHT_OK) {
+
+       printf("Linear memory allocation failed! Requested: %u KB, Available heap: %u KB\n",
+       (num_bytes_per_page * max_page_count) / 1024, esp_get_free_heap_size() / 1024);
+
+
         set_error_buf(error_buf, error_buf_size,
                       "allocate linear memory failed");
         return NULL;
