@@ -1,0 +1,8 @@
+{
+    "idf.flashType": "UART",
+    "idf.port": "/dev/ttyACM0",
+    "files.associations": {
+        "function_registry.h": "c",
+        "stdio.h": "c"
+    }
+}
